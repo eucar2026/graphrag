@@ -1,7 +1,7 @@
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, StorageContext
 
 from llama_index.core.storage.docstore import SimpleDocumentStore
-from llama_index.core.vector_stores import SimpleVectorStore
+from llama_index.core.graph_stores import SimpleGraphStore
 from llama_index.core.storage.index_store import SimpleIndexStore
 
 from llama_index.core import (
@@ -10,6 +10,10 @@ from llama_index.core import (
     load_graph_from_storage,
 )
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 #documents = SimpleDirectoryReader("data").load_data()
 #index = VectorStoreIndex.from_documents(documents)
 
@@ -17,7 +21,7 @@ from llama_index.core import (
 
 storage_context = StorageContext.from_defaults(
     docstore=SimpleDocumentStore.from_persist_dir(),
-    vector_store=SimpleVectorStore.from_persist_dir(),
+    graph_store=SimpleGraphStore.from_persist_dir(),
     index_store=SimpleIndexStore.from_persist_dir(),
 )
 
@@ -40,9 +44,10 @@ index = load_index_from_storage(storage_context)
 #)
 
 query_engine = index.as_query_engine(
-    include_text=False, response_mode="tree_summarize"
+    include_text=False, response_mode="tree_summarize",
+    verbose=True
 )
-response = query_engine.query("What is a RARC Code? ")
+response = query_engine.query("Where was Ethan born? ")
 print(response)
 
 #seperate this into index and query programs
