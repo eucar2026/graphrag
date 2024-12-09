@@ -1,5 +1,6 @@
 import os
-from llama_index.core import SimpleDirectoryReader, KnowledgeGraphIndex, Settings, StorageContext
+from llama_index.core import SimpleDirectoryReader, Settings, StorageContext, PropertyGraphIndex
+from llama_index.core.indices.property_graph import SimpleLLMPathExtractor
 from llama_index.graph_stores.neo4j import Neo4jGraphStore
 from llama_index.llms.openai import OpenAI
 from dotenv import load_dotenv
@@ -21,10 +22,12 @@ graph_store = Neo4jGraphStore(
 
 storage_context = StorageContext.from_defaults(graph_store=graph_store)
 
-index = KnowledgeGraphIndex.from_documents(
+kg_extractor = SimpleLLMPathExtractor(llm=llm)
+
+index = PropertyGraphIndex.from_documents(
     documents,
-    max_triplets_per_chunk=2,
     storage_context=storage_context,
+    kg_extractors=[kg_extractor]
 )
 
 storage_context.persist()
