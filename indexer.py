@@ -1,7 +1,7 @@
 import os
 from llama_index.core import SimpleDirectoryReader, Settings, StorageContext, PropertyGraphIndex
 from llama_index.core.indices.property_graph import SimpleLLMPathExtractor
-from llama_index.graph_stores.neo4j import Neo4jGraphStore
+from llama_index.graph_stores.neo4j import Neo4jPGStore
 from llama_index.llms.openai import OpenAI
 from dotenv import load_dotenv
 
@@ -13,7 +13,7 @@ llm = OpenAI(temperature=0)
 # Settings.llm = llm
 # Settings.chunk_size = 512
 
-graph_store = Neo4jGraphStore(
+graph_store = Neo4jPGStore(
     username="prog2",
     password=os.environ["NEO4J_PASSWORD"],
     url="bolt://localhost:7687",
