@@ -1,33 +1,92 @@
+import asyncio
+import logging.config
 import os
-from llama_index.core import SimpleDirectoryReader, Settings, StorageContext, PropertyGraphIndex
-from llama_index.core.indices.property_graph import SimpleLLMPathExtractor
-from llama_index.graph_stores.neo4j import Neo4jPGStore
-from llama_index.llms.openai import OpenAI
 from dotenv import load_dotenv
+
+from neo4j import GraphDatabase
+from neo4j_graphrag.embeddings import OpenAIEmbeddings
+from neo4j_graphrag.experimental.components.text_splitters.fixed_size_splitter import FixedSizeSplitter
+from neo4j_graphrag.experimental.pipeline.kg_builder import SimpleKGPipeline
+from neo4j_graphrag.llm.openai_llm import OpenAILLM
+
 
 load_dotenv()
 
-documents = SimpleDirectoryReader("./data").load_data()
-
-llm = OpenAI(temperature=0)
-# Settings.llm = llm
-# Settings.chunk_size = 512
-
-graph_store = Neo4jPGStore(
-    username="prog2",
-    password=os.environ["NEO4J_PASSWORD"],
-    url="bolt://localhost:7687",
-    database="neo4j",
+logging.config.dictConfig(
+    {
+        "version": 1,
+        "handlers": {
+            "console": {
+                "class": "logging.StreamHandler",
+            }
+        },
+        "loggers": {
+            "root": {
+                "handlers": ["console"],
+            },
+            "neo4j_graphrag": {
+                "level": "DEBUG",
+            },
+        },
+    }
 )
 
-storage_context = StorageContext.from_defaults(graph_store=graph_store)
+# Connect to the Neo4j database
+URI = os.getenv("NEO4J_URI")
+AUTH = (os.getenv("NEO4J_USERNAME"), os.getenv("NEO4J_PASSWORD"))
+driver = GraphDatabase.driver(URI, auth=AUTH)
 
-kg_extractor = SimpleLLMPathExtractor(llm=llm)
 
-index = PropertyGraphIndex.from_documents(
-    documents,
-    storage_context=storage_context,
-    kg_extractors=[kg_extractor]
+# 1. Chunk the text
+text_splitter = FixedSizeSplitter(chunk_size=150, chunk_overlap=20)
+
+# 2. Embed the chunks
+embedder = OpenAIEmbeddings(model="text-embedding-3-large")
+
+# 3. List entities and relationships to extract
+entities = ["Person", "House", "Planet", "Organization"]
+relations = ["SON_OF", "HEIR_OF", "RULES", "MEMBER_OF"]
+potential_schema = [
+    ("Person", "SON_OF", "Person"),
+    ("Person", "HEIR_OF", "House"),
+    ("House", "RULES", "Planet"),
+    ("Person", "MEMBER_OF", "Organization"),
+]
+
+# 4. Extract nodes and relationships from the chunks
+llm = OpenAILLM(
+    model_name="gpt-4o",
+    model_params={
+        "max_tokens": 2000,
+        "response_format": {"type": "json_object"},
+        "temperature": 0.0,
+        "seed": 123
+    },
 )
 
-storage_context.persist()
+# 5. Create the pipeline
+pipeline = SimpleKGPipeline(
+    driver=driver,
+    text_splitter=text_splitter,
+    embedder=embedder,
+    #entities=entities,
+    #relations=relations,
+    #potential_schema=potential_schema,
+    llm=llm,
+    on_error="IGNORE",
+    from_pdf=False,
+)
+
+# 6. Run the pipeline
+asyncio.run(
+    pipeline.run_async(
+        text=(
+            """The company released its first product, the Apple I computer, in 1976. 
+Apple Inc. was founded by Steve Jobs, Steve Wozniak, and Ronald Wayne in the same year. 
+Jobs served as CEO until 2011, when Tim Cook took over the position. 
+Apple's headquarters is located in Cupertino, California."""
+        )
+    )
+)
+
+driver.close()
