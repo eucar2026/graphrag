@@ -38,8 +38,3 @@ def add_files(dbName):
         os.rename(f"/databases/{dbName}/temp/{file}", f"/databases/{dbName}/files/{file}")
 
 add_files("test")
-
-# Either way we can now query the index
-# query_engine = index.as_query_engine()
-# response = query_engine.query("What did the author do growing up?")
-# print(response)
