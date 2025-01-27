@@ -7,7 +7,6 @@ def createFolder(newpath):
 def createDatabase(dbName):
     createFolder(f"/databases/{dbName}")
     createFolder(f"/databases/{dbName}/files")
-    createFolder(f"/databases/{dbName}/index")
     createFolder(f"/databases/{dbName}/temp")
 
 createDatabase("test2")

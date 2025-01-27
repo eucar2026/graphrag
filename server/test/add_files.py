@@ -1,36 +1,25 @@
 from dotenv import load_dotenv
-from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, StorageContext, load_index_from_storage
+from llama_index.core import SimpleDirectoryReader
 import os.path
 import os
+# setting path to import postgres library
+import sys
+# sys.path.append('..')
+from postgres import index_document
 
 load_dotenv()
-
-def database_indexed(dbName):
-    """Check if database was indexed before"""
-    files = os.listdir(f"/databases/{dbName}/index")
-    return len(files) != 0
 
 def add_files(dbName):
     """adds file to selected database and indexes it
     upload file api call is supposed to save the pdf inside the database's temp folder
     """
     # loads documents that were put in temp folder by file upload api
-    documents = SimpleDirectoryReader(f"/databases/{dbName}/temp").load_data()
+    documents = SimpleDirectoryReader(f"/databases/{dbName}/temp", filename_as_id=True).load_data()
+    print(documents)
 
-    # if database was not indexed before, create dabatase with LlamaIndex
-    PERSIST_DIR = f"/databases/{dbName}/index"
-    if not database_indexed(dbName):
-        # creates index with new documents
-        index = VectorStoreIndex.from_documents(documents)
-    else: 
-        # loads existing index
-        storage_context = StorageContext.from_defaults(persist_dir=PERSIST_DIR)
-        index = load_index_from_storage(storage_context)
-        for d in documents:
-            index.insert(document = d)
-    
-    # store it for later
-    index.storage_context.persist(persist_dir=PERSIST_DIR)
+    # insert documents to database
+    for doc in documents:
+        index_document(doc)
     
     # moves indexed files to files folder
     fileList = os.listdir(f"/databases/{dbName}/temp")
