@@ -57,11 +57,15 @@ def get_postgres_connection():
     return conn.cursor()
 
 # creates the databases table if doesn't exist
-def check_databases_table():
-    cursor = get_postgres_connection()
-    cursor.execute(f"SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'user_databases'")
+def check_database_table(cursor, tableName, tableDef):
+    cursor.execute(f"SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_name = '{tableName}'")
     record = cursor.fetchone()
     print(record[0])
     if record[0] == 0:
-        cursor.execute(f"CREATE TABLE user_databases(db_id SERIAL PRIMARY KEY, db_name VARCHAR NOT NULL)")
+        cursor.execute(f"CREATE TABLE {tableName}({tableDef})")
+
+def check_database_tables():
+    cursor = get_postgres_connection()
+    check_database_table(cursor, "user_databases", "db_id SERIAL PRIMARY KEY, db_name VARCHAR NOT NULL")
+    check_database_table(cursor, "database_files", "file_id SERIAL PRIMARY KEY, db_id int, file_name VARCHAR NOT NULL")
     return cursor

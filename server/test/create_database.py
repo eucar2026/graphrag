@@ -1,12 +1,12 @@
 import os
-from postgres import check_databases_table
+from postgres import check_database_tables
 
 def createFolder(newpath):
     if not os.path.exists(newpath):
         os.makedirs(newpath)
 
 def createDatabase(dbName):
-    cursor = check_databases_table()
+    cursor = check_database_tables()
     cursor.execute("insert into user_databases (db_name) values (%s) returning db_id", (dbName,))
     dbId = cursor.fetchone()[0]
     createFolder(f"/databases/{dbId}")

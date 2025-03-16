@@ -8,6 +8,7 @@ load_dotenv()
 def delete_file(dbName, fileName):
     """deletes a given file from the database"""
     PERSIST_DIR = f"/databases/{dbName}/index"
+    "delete from data_documents_3 where key like '1_part%'"
     # loads existing index
     storage_context = StorageContext.from_defaults(persist_dir=PERSIST_DIR)
     index = load_index_from_storage(storage_context)
