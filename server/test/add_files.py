@@ -39,6 +39,6 @@ def add_files(dbId):
             index_document(dbId, document)
         
         # moves indexed files to files folder
-        os.rename(file_path, f"/databases/{dbId}/files/{file}")
+        os.rename(file_path, f"/databases/{dbId}/files/{fileId}")
 
-add_files(3)
+add_files(4)

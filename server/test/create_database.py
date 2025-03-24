@@ -13,4 +13,4 @@ def createDatabase(dbName):
     createFolder(f"/databases/{dbId}/files")
     createFolder(f"/databases/{dbId}/temp")
 
-createDatabase("test4")
+createDatabase("test5")

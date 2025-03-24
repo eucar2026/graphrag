@@ -1,20 +1,15 @@
 from dotenv import load_dotenv
-from llama_index.core import VectorStoreIndex, StorageContext, load_index_from_storage
-import os.path
 import os
+from postgres import get_postgres_connection
 
 load_dotenv()
 
-def delete_file(dbName, fileName):
+def delete_file(dbId, fileId):
     """deletes a given file from the database"""
-    PERSIST_DIR = f"/databases/{dbName}/index"
-    "delete from data_documents_3 where key like '1_part%'"
-    # loads existing index
-    storage_context = StorageContext.from_defaults(persist_dir=PERSIST_DIR)
-    index = load_index_from_storage(storage_context)
-    # deletes file from index, file name should be id
-    index.delete_ref_doc(f"{PERSIST_DIR}/{fileName}", delete_from_docstore=True)
-    index.storage_context.persist()
-    # afterward, delete file
+    cursor = get_postgres_connection()
+    cursor.execute(f"delete from database_files where db_id = %s and file_id = %s", (dbId, fileId))
+    cursor.execute(f"delete from data_documents_{dbId} where key like '{fileId}\\_part\\_%'")
+    cursor.execute(f"delete from data_chunks_{dbId} where metadata_->>'document_id' like '{fileId}\\_part\\_%'")
+    os.remove(f"/databases/{dbId}/files/{fileId}")
 
-delete_file("test",'C:\\databases\\test\\temp\\abramov.txt')
+delete_file(4,2)
