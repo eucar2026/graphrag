@@ -1,0 +1,5 @@
+llama_index
+psycopg2
+dotenv
+PyPDF2
+fastapi[standard]
