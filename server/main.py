@@ -4,9 +4,8 @@ import os.path
 import shutil
 from dotenv import load_dotenv
 from llama_index.core import Document
-from postgres import index_document, check_database_tables
-from fastapi import FastAPI, File, UploadFile, HTTPException
-from typing import Annotated
+from postgres import index_document, check_database_tables, get_postgres_connection
+from fastapi import FastAPI, UploadFile, HTTPException
 
 load_dotenv()
 
@@ -62,9 +61,14 @@ async def add_files(dbId, files: list[UploadFile]):
 
             # insert documents to database
             index_document(dbId, document)
-        
-            
-                
+              
         return {"success": True}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing PDF: {str(e)}")
+    
+@app.get("/files")
+def get_files(dbId):
+    connection = get_postgres_connection()
+    # TODO: SQL injectino attack risk, fix
+    connection.execute(f"select file_id,file_name from database_files where db_id = {dbId}")
+    return connection.fetchall()
