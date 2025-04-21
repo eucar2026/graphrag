@@ -1,9 +1,14 @@
-from typing import Union
-
-from fastapi import FastAPI
-
 import os
-from postgres import check_database_tables
+import PyPDF2
+import os.path
+import shutil
+from dotenv import load_dotenv
+from llama_index.core import Document
+from postgres import index_document, check_database_tables
+from fastapi import FastAPI, File, UploadFile, HTTPException
+from typing import Annotated
+
+load_dotenv()
 
 app = FastAPI()
 
@@ -18,10 +23,48 @@ def create_database(dbName):
     dbId = cursor.fetchone()[0]
     createFolder(f"/databases/{dbId}")
     createFolder(f"/databases/{dbId}/files")
-    createFolder(f"/databases/{dbId}/temp")
     return {"success": True}
 
 
 @app.get("/databases")
 def get_databases():
     return os.listdir("/databases")
+
+@app.post("/files")
+async def add_files(dbId, files: list[UploadFile]):
+    """adds files to selected database and indexes them"""
+    try: 
+        # process the files coming from web server one by one
+        for file in files:
+            if file.content_type != "application/pdf":
+                raise HTTPException(status_code=400, detail="Invalid file type. Only PDF files are allowed.")
+            # adds file to database and gets file id back to use file id instead of file name to avoid duplicate files
+            cursor = check_database_tables()
+            cursor.execute("insert into database_files (db_id, file_name) values (%s, %s) returning file_id", (dbId, file.filename))
+            fileId = cursor.fetchone()[0]
+            print(fileId)
+
+            # save indexed file to files folder
+            file_path = f"/databases/{dbId}/files/{fileId}"
+            with open(file_path, "wb") as buffer:
+                shutil.copyfileobj(file.file, buffer)
+            file.file.close()
+
+            # loads documents that were uploaded by fastapi
+            pdf_reader = PyPDF2.PdfReader(file_path)
+            for page_num in range(len(pdf_reader.pages)):
+                page = pdf_reader.pages[page_num]
+                text = page.extract_text()
+                document = Document(
+                    text=text.replace('\x00', ''),
+                    id_=f"{fileId}_part_{page_num}"
+                )
+
+            # insert documents to database
+            index_document(dbId, document)
+        
+            
+                
+        return {"success": True}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing PDF: {str(e)}")
