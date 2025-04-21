@@ -96,3 +96,14 @@ def delete_file(dbId, fileId):
     cursor.execute(f"delete from data_chunks_{dbId} where metadata_->>'document_id' like '{fileId}\\_part\\_%'")
     os.remove(f"/databases/{dbId}/files/{fileId}")
     return {"success":True}
+
+@app.delete("/databases")
+def delete_database(dbId):
+    """deletes a given file from the database"""
+    cursor = get_postgres_connection()
+    cursor.execute(f"delete from database_files where db_id = %s", (dbId,))
+    cursor.execute(f"drop table data_documents_{dbId}")
+    cursor.execute(f"drop table data_chunks_{dbId}")
+    cursor.execute(f"delete from user_databases where db_id = %s", (dbId,))
+    shutil.rmtree(f"/databases/{dbId}")
+    return {"success":True}
