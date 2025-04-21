@@ -33,6 +33,7 @@ def get_databases():
 async def add_files(dbId, files: list[UploadFile]):
     """adds files to selected database and indexes them"""
     try: 
+        fileIds = []
         # process the files coming from web server one by one
         for file in files:
             if file.content_type != "application/pdf":
@@ -61,8 +62,11 @@ async def add_files(dbId, files: list[UploadFile]):
 
             # insert documents to database
             index_document(dbId, document)
+            
+            # adds fileid to list to return
+            fileIds.append(fileId)
               
-        return {"success": True}
+        return {"success": True, "fileIds": fileIds}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing PDF: {str(e)}")
     
@@ -82,3 +86,13 @@ def query_database(dbId, prompt):
     query_engine = index.as_query_engine()
     results = query_engine.query(prompt)
     return results.response
+
+@app.delete("/files")
+def delete_file(dbId, fileId):
+    """deletes a given file from the database"""
+    cursor = get_postgres_connection()
+    cursor.execute(f"delete from database_files where db_id = %s and file_id = %s", (dbId, fileId))
+    cursor.execute(f"delete from data_documents_{dbId} where key like '{fileId}\\_part\\_%'")
+    cursor.execute(f"delete from data_chunks_{dbId} where metadata_->>'document_id' like '{fileId}\\_part\\_%'")
+    os.remove(f"/databases/{dbId}/files/{fileId}")
+    return {"success":True}
