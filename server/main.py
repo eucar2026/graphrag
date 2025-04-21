@@ -3,8 +3,8 @@ import PyPDF2
 import os.path
 import shutil
 from dotenv import load_dotenv
-from llama_index.core import Document
-from postgres import index_document, check_database_tables, get_postgres_connection
+from llama_index.core import Document, VectorStoreIndex, StorageContext, load_index_from_storage
+from postgres import index_document, check_database_tables, get_postgres_connection, get_vector_index
 from fastapi import FastAPI, UploadFile, HTTPException
 
 load_dotenv()
@@ -72,3 +72,13 @@ def get_files(dbId):
     # TODO: SQL injectino attack risk, fix
     connection.execute(f"select file_id,file_name from database_files where db_id = {dbId}")
     return connection.fetchall()
+
+@app.get("/query")
+def query_database(dbId, prompt):
+    """queries database with given prompt and returns response"""
+    # loads existing index
+    index = get_vector_index(dbId)
+    # queries the index
+    query_engine = index.as_query_engine()
+    results = query_engine.query(prompt)
+    return results.response
