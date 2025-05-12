@@ -2,4 +2,18 @@
   max-width: 1280px;
   margin: 0 auto;
   padding: 2rem;
+  text-align: center;
+}
+
+div.error {
+  color: red;
+}
+
+table.list td {
+  border: solid gray 1px;
+  padding: 5px;
+}
+
+table.list {
+  border-collapse: collapse;
 }
