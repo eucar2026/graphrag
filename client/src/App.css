@@ -17,3 +17,10 @@ table.list td {
 table.list {
   border-collapse: collapse;
 }
+
+div.center {
+  display: flex;
+  justify-content: center;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}

@@ -6,35 +6,60 @@ function Databases() {
     const [progress, setProgress] = useState(true)
     const [error, setError] = useState(null)
 
-    useEffect(() => {
-        const fetchData = async () => {
-          try {
-            const response = await fetch('/api/databases');
+
+    const fetchData = async (method, data) => {
+        setProgress(true);
+        try {
+            const options = {
+                method,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            };
+            if (method === 'POST') options.body = JSON.stringify(data);
+            const response = await fetch('/api/databases', options);
             if (!response.ok)
-              throw new Error(`HTTP error! status: ${response.status}`);
-            const dbs = await response.json();
-            setDatabases(dbs);
-          } 
-          catch (error) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            return response.json();
+        } 
+        catch (error) {
             setError(error);
-          } 
-          finally {
+        } 
+        finally {
             setProgress(false);
-          }
-        };
-        fetchData();
-      }, []); 
+        }
+    };
+    
+    const getDatabases = async () => {
+      const dbs = await fetchData('GET');
+      setDatabases(dbs);
+    };
+
+    useEffect(() => { getDatabases(); }, []); 
+
+    const addDatabase = async e => {
+        const dbName = prompt('Name your database: ');
+        if (!dbName) return;
+        const response = await fetchData('POST', { dbName });
+        console.log(response);
+        await getDatabases();
+    };
 
     return <div>
         <h2>Databases</h2>
+        <button onClick={addDatabase}>Add Database</button>
         {progress && <progress/>}
         {error && <div className="error">{error.message}</div>}
-        {databases && <table className="list">
-            {databases.map(database => <tr>
-                <td>{database}</td>
-                {/* to do: add links here with dbIDs, requires server change */}
-            </tr>)}
-        </table>}
+        <div className="center">
+            {databases && <table className="list">
+                <tbody>
+                    {databases.map(database => <tr key={database}>
+                        <td>{database}</td>
+                        {/* to do: add links here with dbIDs, requires server change */}
+                    </tr>)}
+                </tbody>
+            </table>}
+        </div>
     </div>
 }
 
