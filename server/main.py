@@ -82,10 +82,14 @@ async def add_files(dbId, files: list[UploadFile]):
     
 @app.get("/files")
 def get_files(dbId):
-    connection = get_postgres_connection()
+    cursor = get_postgres_connection()
     # TODO: SQL injectino attack risk, fix
-    connection.execute(f"select file_id,file_name from database_files where db_id = {dbId}")
-    return connection.fetchall()
+    cursor.execute(f"select file_id,file_name from database_files where db_id = {dbId}")
+    rows = cursor.fetchall()
+    columns = [col.name for col in cursor.description]
+    result = [dict(zip(columns, row)) for row in rows]
+    cursor.close()
+    return result
 
 @app.get("/query")
 def query_database(dbId, prompt):
