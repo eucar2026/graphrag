@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from llama_index.core import Document, VectorStoreIndex, StorageContext, load_index_from_storage
 from postgres import index_document, check_database_tables, get_postgres_connection, get_vector_index
 from fastapi import FastAPI, UploadFile, HTTPException
+from pydantic import BaseModel
 
 load_dotenv()
 
@@ -15,10 +16,13 @@ def createFolder(newpath):
     if not os.path.exists(newpath):
         os.makedirs(newpath)
 
+class DbName(BaseModel):
+    dbName: str
+
 @app.post("/databases")
-def create_database(dbName):
+def create_database(args: DbName):
     cursor = check_database_tables()
-    cursor.execute("insert into user_databases (db_name) values (%s) returning db_id", (dbName,))
+    cursor.execute("insert into user_databases (db_name) values (%s) returning db_id", (args.dbName,))
     dbId = cursor.fetchone()[0]
     createFolder(f"/databases/{dbId}")
     createFolder(f"/databases/{dbId}/files")
@@ -27,7 +31,13 @@ def create_database(dbName):
 
 @app.get("/databases")
 def get_databases():
-    return os.listdir("/databases")
+    cursor = get_postgres_connection()
+    cursor.execute("select * from user_databases")
+    rows = cursor.fetchall()
+    columns = [col.name for col in cursor.description]
+    result = [dict(zip(columns, row)) for row in rows]
+    cursor.close()
+    return result
 
 @app.post("/files")
 async def add_files(dbId, files: list[UploadFile]):
@@ -102,8 +112,8 @@ def delete_database(dbId):
     """deletes a given file from the database"""
     cursor = get_postgres_connection()
     cursor.execute(f"delete from database_files where db_id = %s", (dbId,))
-    cursor.execute(f"drop table data_documents_{dbId}")
-    cursor.execute(f"drop table data_chunks_{dbId}")
+    cursor.execute(f"drop table if exists data_documents_{dbId}")
+    cursor.execute(f"drop table if exists data_chunks_{dbId}")
     cursor.execute(f"delete from user_databases where db_id = %s", (dbId,))
     shutil.rmtree(f"/databases/{dbId}")
     return {"success":True}

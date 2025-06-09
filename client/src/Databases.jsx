@@ -10,6 +10,7 @@ function Databases() {
     const fetchData = async (method, data) => {
         setProgress(true);
         try {
+            let url = '/api/databases';
             const options = {
                 method,
                 headers: {
@@ -17,7 +18,8 @@ function Databases() {
                 }
             };
             if (method === 'POST') options.body = JSON.stringify(data);
-            const response = await fetch('/api/databases', options);
+            if (method === 'DELETE') url += `?${data}`;
+            const response = await fetch(url, options);
             if (!response.ok)
                 throw new Error(`HTTP error! status: ${response.status}`);
             return response.json();
@@ -37,11 +39,16 @@ function Databases() {
 
     useEffect(() => { getDatabases(); }, []); 
 
-    const addDatabase = async e => {
+    const addDatabase = async () => {
         const dbName = prompt('Name your database: ');
         if (!dbName) return;
-        const response = await fetchData('POST', { dbName });
-        console.log(response);
+        await fetchData('POST', { dbName });
+        await getDatabases();
+    };
+
+    const deleteDatabase = async dbId => {
+        if (!confirm('Are you sure you want to delete this database? ')) return;
+        await fetchData('DELETE', `dbId=${dbId}`);
         await getDatabases();
     };
 
@@ -52,10 +59,20 @@ function Databases() {
         {error && <div className="error">{error.message}</div>}
         <div className="center">
             {databases && <table className="list">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Options</th>
+                    </tr>
+                </thead>
                 <tbody>
-                    {databases.map(database => <tr key={database}>
-                        <td>{database}</td>
-                        {/* to do: add links here with dbIDs, requires server change */}
+                    {databases.map(db => <tr key={db.db_id}>
+                        <td>{db.db_id}</td>
+                        <td>{db.db_name}</td>
+                        <td>
+                            <a onClick={() => deleteDatabase(db.db_id)}>Delete</a>
+                        </td>
                     </tr>)}
                 </tbody>
             </table>}

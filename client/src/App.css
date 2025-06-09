@@ -11,7 +11,8 @@ div.error {
 
 table.list td {
   border: solid gray 1px;
-  padding: 5px;
+  padding: 5px 10px;
+  min-width: 50px;
 }
 
 table.list {
@@ -23,4 +24,8 @@ div.center {
   justify-content: center;
   padding-top: 10px;
   padding-bottom: 10px;
+}
+
+a {
+  cursor: pointer;
 }
