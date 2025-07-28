@@ -48,7 +48,7 @@ function Databases() {
                 <tbody>
                     {databases.map(db => <tr key={db.db_id}>
                         <td>
-                            <a onClick={() => navigate(`/files/${db.db_id}`)}>{db.db_id}</a>
+                            <a onClick={() => navigate(`/database/${db.db_id}`)}>{db.db_id}</a>
                         </td>
                         <td>{db.db_name}</td>
                         <td>
