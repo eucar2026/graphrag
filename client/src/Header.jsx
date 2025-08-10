@@ -1,6 +1,8 @@
+import { Link } from 'react-router';
+
 function Header() {
 
-  return <h1>QueryPDF.ai</h1>
+  return <Link to="/"><h1>QueryPDF.ai</h1></Link>;
 }
 
 export default Header

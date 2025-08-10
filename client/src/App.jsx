@@ -1,4 +1,5 @@
 import { Routes, Route } from 'react-router';
+import { BrowserRouter } from 'react-router'
 import Header from './Header.jsx';
 import Footer from './Footer.jsx';
 import Databases from './Databases.jsx';
@@ -8,12 +9,14 @@ import './App.css';
 function App() {
 
   return <div>
-    <Header/>
+    <BrowserRouter>
+      <Header/>
       <Routes>
         <Route path="/" element={<Databases />} />
         <Route path="/database/:dbId" element={<Database />} />
       </Routes>
-    <Footer/>
+      <Footer/>
+    </BrowserRouter>
   </div>
 }
 

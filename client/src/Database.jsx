@@ -40,9 +40,9 @@ function Database() {
         }
     };
 
-    const deleteFile = async dbId => {
+    const deleteFile = async fileId => {
         if (!confirm('Are you sure you want to delete this file? ')) return;
-        await fetchFiles('DELETE', `dbId=${dbId}`);
+        await fetchFiles('DELETE', `dbId=${dbId}&fileId=${fileId}`);
         await getFiles();
     };
 
@@ -70,7 +70,7 @@ function Database() {
         {progress && <progress/>}
         {error && <div className="error">{error.message}</div>}
         <div className="center">
-            {files && <table className="list">
+            {files && files.length > 0 && <table className="list">
                 <thead>
                     <tr>
                         <th>ID</th>
