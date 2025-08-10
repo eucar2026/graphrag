@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router';
 import getFetchData from './fetchData';
+import './Database.css';
 
 function Database() {
     const { dbId } = useParams();
@@ -8,6 +9,7 @@ function Database() {
     const [files, setFiles] = useState(null);
     const [progress, setProgress] = useState(true);
     const [error, setError] = useState(null);
+    const [result, setResult] = useState(null);
 
     const fetchFiles = getFetchData('/api/files', setError, setProgress);
     const fetchQuery = getFetchData('/api/query', setError, setProgress);
@@ -47,19 +49,24 @@ function Database() {
     const queryDatabase = async () => {
         const response = await fetchQuery('GET', `dbId=${dbId}&prompt=${document.getElementById('query').value}`);
         console.log(response);
+        setResult(response);
     };
 
     return <div>
         <h2>Database ID: {dbId}</h2>
-        <div>
+        <div className="upload">
             <label>Upload files</label>
             <input type="file" multiple={false} onChange={addFiles}></input>
         </div>
-        <div>
+        <div className="qarea">
             <label>Query</label>
             <textarea id="query"></textarea>
             <button onClick={queryDatabase}>Submit</button>
         </div>
+        {result && <div className="results">
+            <label>Result: </label>
+            <span>{result}</span>
+        </div>}
         {progress && <progress/>}
         {error && <div className="error">{error.message}</div>}
         <div className="center">
